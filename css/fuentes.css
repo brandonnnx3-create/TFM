@@ -1,0 +1,37 @@
+/* Tipografías locales (SIL OFL 1.1, licencias en fonts/).
+
+   El logo está escrito en una garamond de alto contraste con la "for"
+   en itálica: Cormorant Garamond es la libre más cercana, y se usa en
+   los títulos con el mismo gesto (una palabra en itálica). La bajada
+   del logo, "PRODUCTOS CAPILARES", es una geométrica muy espaciada:
+   Jost, que además se lee muy bien en tamaños chicos. Sólo latín
+   básico + acentos y ñ, dos pesos de cada una. */
+
+@font-face{
+  font-family:'Cormorant Garamond';
+  font-style:normal;
+  font-weight:500;
+  font-display:swap;
+  src:url('../fonts/cormorant-garamond-latin-500-normal.woff2') format('woff2');
+}
+@font-face{
+  font-family:'Cormorant Garamond';
+  font-style:italic;
+  font-weight:500;
+  font-display:swap;
+  src:url('../fonts/cormorant-garamond-latin-500-italic.woff2') format('woff2');
+}
+@font-face{
+  font-family:'Jost';
+  font-style:normal;
+  font-weight:400;
+  font-display:swap;
+  src:url('../fonts/jost-latin-400-normal.woff2') format('woff2');
+}
+@font-face{
+  font-family:'Jost';
+  font-style:normal;
+  font-weight:500;
+  font-display:swap;
+  src:url('../fonts/jost-latin-500-normal.woff2') format('woff2');
+}
