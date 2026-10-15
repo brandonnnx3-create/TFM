@@ -57,5 +57,24 @@ fonts/              archivos de las tipografías y sus licencias (SIL OFL)
 
 ## Publicar
 
-En GitHub: **Settings → Pages → Build and deployment → Source: Deploy from a
-branch**, elegir la rama y la carpeta `/ (root)`. No hay paso de compilación.
+La página se publica con **GitHub Pages** (gratis, el repositorio es público).
+Se activa una sola vez:
+
+1. En GitHub, entrá a **TFM → Settings → Pages**.
+2. En **Build and deployment → Source** elegí **Deploy from a branch**.
+3. En **Branch** elegí `claude/dazzling-johnson-faehwf` y la carpeta `/ (root)`.
+   Tocá **Save**.
+
+En uno o dos minutos queda en **https://brandonnnx3-create.github.io/TFM/**.
+Cada cambio que se suba a esa rama se publica solo.
+
+No hay paso de compilación (por eso está el archivo `.nojekyll`).
+
+Mientras el catálogo sea de ejemplo, la página le pide a Google que no la
+indexe (`<meta name="robots" content="noindex">` en `index.html`). Sacá esa
+línea cuando cargues los productos reales.
+
+Alternativa: **Cloudflare Pages** → Workers & Pages → Create → Pages →
+Connect to Git → elegir TFM, sin comando de build y con `/` como carpeta de
+salida. Si se usa otro dominio, actualizar `og:url` y `og:image` en
+`index.html` para que la vista previa del link en WhatsApp muestre la imagen.
