@@ -61,14 +61,12 @@ La página se publica con **GitHub Pages** (gratis, el repositorio es público).
 Se activa una sola vez:
 
 1. En GitHub, entrá a **TFM → Settings → Pages**.
-2. En **Build and deployment → Source** elegí **Deploy from a branch**.
-3. En **Branch** elegí `claude/dazzling-johnson-faehwf` y la carpeta `/ (root)`.
-   Tocá **Save**.
+2. En **Build and deployment → Source** elegí **GitHub Actions**.
 
-En uno o dos minutos queda en **https://brandonnnx3-create.github.io/TFM/**.
-Cada cambio que se suba a esa rama se publica solo.
-
-No hay paso de compilación (por eso está el archivo `.nojekyll`).
+Queda en **https://brandonnnx3-create.github.io/TFM/**. Cada cambio que se suba
+a la rama `claude/dazzling-johnson-faehwf` se publica solo con
+`.github/workflows/publicar.yml` (se ve en la pestaña **Actions**). No hay paso
+de compilación.
 
 Mientras el catálogo sea de ejemplo, la página le pide a Google que no la
 indexe (`<meta name="robots" content="noindex">` en `index.html`). Sacá esa
