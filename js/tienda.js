@@ -54,6 +54,9 @@
   var numeroWa = String(cfg.whatsapp || "").replace(/\D/g, "");
   var hayWa = numeroWa.length >= 8;
   function conTransferencia(n) { return n * (1 - DESC / 100); }
+  /* Un producto sin precio cargado (null) se muestra "a consultar": el
+     pedido se arma igual y el total se pasa por WhatsApp. */
+  function tienePrecio(c) { return !!c && typeof c.precio === "number" && c.precio > 0; }
   function linkWa(texto) { return hayWa ? "https://wa.me/" + numeroWa + "?text=" + encodeURIComponent(texto) : null; }
   function ponerWa(a, texto) {
     var h = linkWa(texto);
@@ -68,8 +71,12 @@
     p.necesidades = p.necesidades || [];
     p.imagenes = (p.imagenes || []).filter(Boolean);
     p.beneficios = p.beneficios || [];
+    p.opciones = (p.opciones || []).filter(Boolean);
     P[p.id] = p;
   });
+  var HAY_PRECIOS = PRODUCTOS.some(tienePrecio);
+  var MARCAS = [];
+  PRODUCTOS.forEach(function (p) { if (p.marca && MARCAS.indexOf(p.marca) < 0) MARCAS.push(p.marca); });
   NECESIDADES.forEach(function (n) { N[n.id] = n; });
   RUTINAS.forEach(function (k) {
     k.items = (k.productos || []).map(function (id) { return P[id]; }).filter(Boolean);
@@ -174,7 +181,8 @@
       cfg.envios,
       ENVIO_GRATIS ? "Envío gratis desde " + precio(ENVIO_GRATIS) : "",
       DESC ? DESC + "% off pagando por transferencia" : "",
-      CUOTAS ? CUOTAS + " cuotas sin interés" : ""
+      CUOTAS ? CUOTAS + " cuotas sin interés" : "",
+      MARCAS.join(" · ")
     ].filter(Boolean);
     if (!msjs.length) { caja.hidden = true; root.style.setProperty("--aviso-h", "0px"); return; }
     pista.innerHTML = msjs.map(function (m, i) {
@@ -313,7 +321,7 @@
       if (!p) dest.hidden = true;
       else {
         $(".hero__destacado-nombre", dest).textContent = p.nombre;
-        $(".hero__destacado-precio", dest).textContent = precio(p.precio);
+        $(".hero__destacado-precio", dest).textContent = tienePrecio(p) ? precio(p.precio) : (p.marca || "");
       }
     }
     requestAnimationFrame(function () { requestAnimationFrame(function () { sec && sec.classList.add("is-in"); }); });
@@ -356,39 +364,55 @@
   /* ============================================================
      TIENDA: filtros, orden y grilla
      ============================================================ */
-  var filtro = "todos", orden = "destacados";
-  var grilla = $("#grilla"), chips = $("#filtros"), cuenta = $("#cuenta"), selOrden = $("#orden");
+  var filtro = "todos", orden = "destacados", marca = "";
+  var grilla = $("#grilla"), chips = $("#filtros"), cuenta = $("#cuenta"), selOrden = $("#orden"), selMarca = $("#marca");
 
   function tarjeta(p, i) {
     var agotado = p.estado === "agotado";
     var img1 = p.imagenes[0] || "", img2 = p.imagenes[1] || "";
     var badge = BADGES[p.estado] ? '<span class="badge' + (p.estado === "nuevo" ? " badge--nuevo" : "") + '">' + BADGES[p.estado] + "</span>" : "";
-    var meta = [p.tipo, p.contenido].filter(Boolean).map(esc).join(" · ");
+    /* Marca y presentación corta (lo largo, como "Caja de 36 sobres
+       de 10 g", queda para la ficha). */
+    var pres = p.opciones.length ? p.opciones.join(" / ") : (p.contenido && p.contenido.length <= 14 ? p.contenido : p.tipo);
+    var meta = [p.marca, pres].filter(Boolean).map(esc).join(" · ");
+    /* Con opciones (tamaño, volumen) el botón lleva a la ficha a elegir. */
+    var boton = p.opciones.length && !agotado
+      ? '<a class="quick" href="#producto/' + esc(p.id) + '" aria-label="Elegir ' + esc((p.opcionesTitulo || "opción").toLowerCase()) + " de " + esc(p.nombre) + '">' +
+          icono("i-flecha") + '<span class="quick__txt">Elegir ' + esc((p.opcionesTitulo || "").toLowerCase()) + "</span></a>"
+      : '<button class="quick" type="button" data-agregar="' + esc(p.id) + '"' + (agotado ? " disabled" : "") + ' aria-label="Agregar ' + esc(p.nombre) + ' al carrito">' +
+          icono("i-mas") + '<span class="quick__txt">' + (agotado ? "Sin stock" : "Agregar") + "</span></button>";
     return '<li class="card' + (agotado ? " card--agotado" : "") + '" style="--d:' + ((i % 4) * 0.08).toFixed(2) + 's">' +
       '<div class="card__foto">' +
         '<a class="card__media" href="#producto/' + esc(p.id) + '" tabindex="-1" aria-hidden="true">' + badge +
           (img1 ? '<img class="card__img1" src="' + esc(img1) + '" alt="' + esc(p.alt || p.nombre) + '" loading="lazy" decoding="async" width="900" height="1125">' : "") +
           (img2 ? '<img class="card__img2" src="' + esc(img2) + '" alt="" loading="lazy" decoding="async" width="900" height="1125">' : "") +
         "</a>" +
-        '<button class="quick" type="button" data-agregar="' + esc(p.id) + '"' + (agotado ? " disabled" : "") + ' aria-label="Agregar ' + esc(p.nombre) + ' al carrito">' +
-          icono("i-mas") + '<span class="quick__txt">' + (agotado ? "Sin stock" : "Agregar") + "</span></button>" +
+        boton +
       "</div>" +
       (meta ? '<p class="card__meta">' + meta + "</p>" : "") +
       '<h3 class="card__titulo"><a href="#producto/' + esc(p.id) + '">' + esc(p.nombre) + "</a></h3>" +
       (p.bajada ? '<p class="card__bajada">' + esc(p.bajada) + "</p>" : "") +
-      '<p class="card__precios"><span class="precio">' + precio(p.precio) + "</span>" +
-        (DESC ? '<span class="card__transf">' + precio(conTransferencia(p.precio)) + " con transferencia</span>" : "") +
+      '<p class="card__precios">' + (tienePrecio(p)
+        ? '<span class="precio">' + precio(p.precio) + "</span>" +
+          (DESC ? '<span class="card__transf">' + precio(conTransferencia(p.precio)) + " con transferencia</span>" : "")
+        : '<span class="precio precio--consultar">Consultar precio</span>') +
       "</p></li>";
   }
 
   function listaFiltrada() {
-    var l = PRODUCTOS.filter(function (p) { return filtro === "todos" || p.necesidades.indexOf(filtro) > -1; });
+    var l = PRODUCTOS.filter(function (p) {
+      return (filtro === "todos" || p.necesidades.indexOf(filtro) > -1) && (!marca || p.marca === marca);
+    });
     var idx = {}; PRODUCTOS.forEach(function (p, i) { idx[p.id] = i; });
     l.sort(function (a, b) {
       var ag = (a.estado === "agotado") - (b.estado === "agotado");
       if (ag) return ag;
-      if (orden === "menor") return a.precio - b.precio;
-      if (orden === "mayor") return b.precio - a.precio;
+      if (orden !== "destacados") {
+        var sp = tienePrecio(b) - tienePrecio(a);
+        if (sp) return sp;
+        if (tienePrecio(a) && orden === "menor") return a.precio - b.precio;
+        if (tienePrecio(a) && orden === "mayor") return b.precio - a.precio;
+      }
       return idx[a.id] - idx[b.id];
     });
     return l;
@@ -422,7 +446,26 @@
       if (c) aplicarFiltro(c.getAttribute("data-chip"));
     });
   }
-  if (selOrden) selOrden.addEventListener("change", function () { orden = selOrden.value; pintarGrilla(); });
+  if (selOrden) {
+    if (!HAY_PRECIOS) selOrden.closest(".orden").hidden = true;
+    selOrden.addEventListener("change", function () { orden = selOrden.value; pintarGrilla(); });
+  }
+  function aplicarMarca(m) {
+    marca = MARCAS.indexOf(m) > -1 ? m : "";
+    if (selMarca) selMarca.value = marca;
+    pintarGrilla();
+  }
+  if (selMarca) {
+    if (MARCAS.length < 2) selMarca.closest(".orden").hidden = true;
+    selMarca.insertAdjacentHTML("beforeend", MARCAS.map(function (m) { return '<option value="' + esc(m) + '">' + esc(m) + "</option>"; }).join(""));
+    selMarca.addEventListener("change", function () { aplicarMarca(selMarca.value); });
+  }
+  (function franjaMarcas() {
+    var ul = $("#marcas");
+    if (!ul) return;
+    if (!MARCAS.length) { ul.closest("section").hidden = true; return; }
+    ul.innerHTML = MARCAS.map(function (m) { return '<li><a href="#tienda" data-marca="' + esc(m) + '">' + esc(m) + "</a></li>"; }).join("");
+  })();
   pintarChips();
   pintarGrilla();
 
@@ -458,7 +501,7 @@
      FICHA DE PRODUCTO  (#producto/id)
      ============================================================ */
   var ficha = $("#ficha"), fichaPanel = $("#fichaPanel"), fichaContenido = $("#fichaContenido");
-  var fichaId = null, fichaConEntrada = false, fichaCant = 1;
+  var fichaId = null, fichaConEntrada = false, fichaCant = 1, fichaOp = 0;
 
   function complementos(p) {
     var otros = PRODUCTOS.filter(function (x) { return x.id !== p.id && x.estado !== "agotado"; });
@@ -478,9 +521,13 @@
     return elegidos.slice(0, 3);
   }
 
-  function textoWaProducto(p, n) {
-    return "Hola! Quiero comprar:\n• " + n + " × " + p.nombre + (p.contenido ? " (" + p.contenido + ")" : "") + " — " + precio(p.precio * n) +
-      "\n\n¿Me confirman stock y costo de envío?";
+  /* "Fidelité, 1000 g": marca y opción elegida (o contenido). */
+  function detalle(p, op) { return [p.marca, op || p.contenido].filter(Boolean).join(", "); }
+
+  function textoWaProducto(p, n, op) {
+    var d = detalle(p, op);
+    return "Hola! Quiero comprar:\n• " + n + " × " + p.nombre + (d ? " (" + d + ")" : "") +
+      (tienePrecio(p) ? " — " + precio(p.precio * n) + "\n\n¿Me confirman stock y costo de envío?" : "\n\n¿Me pasan precio, stock y costo de envío?");
   }
 
   function pintarFicha(p) {
@@ -488,8 +535,9 @@
     var nec0 = N[p.necesidades.filter(function (n) { return N[n]; })[0]];
     var imgs = p.imagenes.length ? p.imagenes : [""];
     var formas = [];
-    if (DESC) formas.push("<b>" + precio(conTransferencia(p.precio)) + "</b> pagando por transferencia");
-    if (CUOTAS > 1) formas.push(CUOTAS + " cuotas sin interés de <b>" + precio(p.precio / CUOTAS) + "</b>");
+    if (!tienePrecio(p)) formas.push("Te pasamos el precio por WhatsApp, junto con el stock.");
+    else if (DESC) formas.push("<b>" + precio(conTransferencia(p.precio)) + "</b> pagando por transferencia");
+    if (CUOTAS > 1 && tienePrecio(p)) formas.push(CUOTAS + " cuotas sin interés de <b>" + precio(p.precio / CUOTAS) + "</b>");
     var garantias = [];
     if (cfg.envios) garantias.push(["i-camion", "<b>" + esc(cfg.envios) + ".</b> " + (ENVIO_GRATIS ? "Gratis desde " + precio(ENVIO_GRATIS) + "." : "El costo te lo pasamos antes de pagar.")]);
     if ((cfg.pagos || []).length) garantias.push(["i-tarjeta", "<b>Medios de pago:</b> " + esc(enLista(cfg.pagos)) + "."]);
@@ -514,13 +562,19 @@
           (imgs.length > 1 ? '<div class="galeria__puntos" aria-hidden="true">' + imgs.map(function (_, i) { return "<i" + (i === 0 ? ' class="is-activo"' : "") + "></i>"; }).join("") + "</div>" : "") +
         "</div>" +
         '<div class="ficha__info">' +
-          '<p class="ficha__ruta">' + (nec0 ? '<a href="#tienda" data-filtro="' + esc(nec0.id) + '">' + esc(nec0.nombre) + "</a> · " : "") + esc(p.tipo || "") + "</p>" +
+          '<p class="ficha__ruta">' + [p.marca ? '<a href="#tienda" data-marca="' + esc(p.marca) + '">' + esc(p.marca) + "</a>" : "", esc(p.tipo || "")].filter(Boolean).join(" · ") + "</p>" +
           '<h2 class="ficha__nombre" id="fichaNombre">' + esc(p.nombre) + "</h2>" +
           (p.bajada ? '<p class="ficha__bajada">' + esc(p.bajada) + "</p>" : "") +
           '<div class="ficha__precios">' +
-            '<div class="ficha__precio"><span class="precio">' + precio(p.precio) + "</span>" + (p.contenido ? '<span class="ficha__contenido-pill">' + esc(p.contenido) + "</span>" : "") + "</div>" +
+            '<div class="ficha__precio">' + (tienePrecio(p) ? '<span class="precio">' + precio(p.precio) + "</span>" : '<span class="precio precio--consultar">Precio a consultar</span>') +
+              (p.contenido && !p.opciones.length ? '<span class="ficha__contenido-pill">' + esc(p.contenido) + "</span>" : "") + "</div>" +
             (formas.length ? '<p class="ficha__formas">' + formas.join(" · o ") + "</p>" : "") +
           "</div>" +
+          (p.opciones.length ? '<div class="opciones" role="radiogroup" aria-label="' + esc(p.opcionesTitulo || "Opción") + '">' +
+            '<span class="eyebrow">' + esc(p.opcionesTitulo || "Opción") + "</span>" +
+            p.opciones.map(function (o, i) {
+              return '<button class="chip" type="button" role="radio" data-opcion="' + i + '" aria-checked="' + (i === 0) + '">' + esc(o) + "</button>";
+            }).join("") + "</div>" : "") +
           '<div class="ficha__comprar" id="fichaComprar">' +
             '<div class="cantidad" role="group" aria-label="Cantidad">' +
               '<button type="button" data-cant="-1" aria-label="Uno menos">' + icono("i-menos") + "</button>" +
@@ -539,13 +593,14 @@
           }).join("") + "</div>" : "") +
         "</div>" +
       "</div>" +
-      (mas.length ? '<section class="ficha__mas" aria-labelledby="fichaMasTit"><h3 class="titulo" id="fichaMasTit">Completá tu <em>rutina</em></h3><ul class="grilla">' +
+      (mas.length ? '<section class="ficha__mas" aria-labelledby="fichaMasTit"><h3 class="titulo" id="fichaMasTit">' + (p.paso ? "Completá tu <em>rutina</em>" : "Para <em>combinar</em>") + '</h3><ul class="grilla">' +
         mas.map(tarjeta).join("") + "</ul></section>" : "") +
-      '<div class="ficha__barra" id="fichaBarra"><div><span class="precio">' + precio(p.precio) + "</span>" +
-        (DESC ? "<small>" + precio(conTransferencia(p.precio)) + " con transferencia</small>" : "") + "</div>" +
+      '<div class="ficha__barra" id="fichaBarra"><div>' + (tienePrecio(p)
+        ? '<span class="precio">' + precio(p.precio) + "</span>" + (DESC ? "<small>" + precio(conTransferencia(p.precio)) + " con transferencia</small>" : "")
+        : '<span class="precio precio--consultar">Consultar precio</span>') + "</div>" +
         '<button class="btn" type="button" data-agregar-ficha="' + esc(p.id) + '"' + (agotado ? " disabled" : "") + "><span>" + (agotado ? "Sin stock" : "Agregar") + "</span></button></div>";
 
-    fichaCant = 1;
+    fichaCant = 1; fichaOp = 0;
     actualizarWaFicha(p);
     $$(".ficha__mas .card", fichaContenido).forEach(function (c) { c.classList.add("is-visible"); });
 
@@ -577,7 +632,7 @@
     if (!a) return;
     var texto = p.estado === "agotado"
       ? "Hola! Quiero que me avisen cuando vuelva a haber " + p.nombre + "."
-      : textoWaProducto(p, fichaCant);
+      : textoWaProducto(p, fichaCant, p.opciones[fichaOp]);
     ponerWa(a, texto);
   }
 
@@ -639,6 +694,21 @@
   $$("[data-cerrar-ficha]", ficha).forEach(function (el) { el.addEventListener("click", cerrarFicha); });
 
   fichaContenido.addEventListener("click", function (e) {
+    var o = e.target.closest("[data-opcion]");
+    if (o) {
+      fichaOp = +o.getAttribute("data-opcion");
+      $$("[data-opcion]", fichaContenido).forEach(function (x) {
+        var si = x === o;
+        x.setAttribute("aria-checked", String(si));
+      });
+      /* Si hay una foto por opción, la galería (en celular) va a esa. */
+      var p = P[fichaId], gal = $("#galeria");
+      if (p && gal && p.imagenes.length === p.opciones.length && gal.scrollWidth > gal.clientWidth) {
+        gal.scrollTo({ left: fichaOp * gal.clientWidth, behavior: animar ? "smooth" : "auto" });
+      }
+      if (p) actualizarWaFicha(p);
+      return;
+    }
     var c = e.target.closest("[data-cant]");
     if (c) {
       fichaCant = Math.max(1, Math.min(20, fichaCant + (+c.getAttribute("data-cant"))));
@@ -664,6 +734,7 @@
         return;
       }
       if (a.hasAttribute("data-filtro")) aplicarFiltro(a.getAttribute("data-filtro"));
+      if (a.hasAttribute("data-marca")) { aplicarFiltro("todos"); aplicarMarca(a.getAttribute("data-marca")); }
       if (href.charAt(0) === "#" && href.length > 1 && capas.length) {
         /* Un link a otra sección cierra lo que esté abierto y deja que
            el navegador baje hasta ahí. */
@@ -685,7 +756,7 @@
     } else if (b.hasAttribute("data-agregar-ficha")) {
       var pf = P[b.getAttribute("data-agregar-ficha")];
       if (!pf) return;
-      agregar("p", pf.id, fichaCant);
+      agregar("p", pf.id, fichaCant, pf.opciones[fichaOp]);
       confirmar(b, "Agregado");
       setTimeout(abrirCarrito, animar ? 380 : 0);
     } else if (b.hasAttribute("data-agregar-kit")) {
@@ -740,19 +811,26 @@
       items = (JSON.parse(raw) || []).filter(function (it) {
         var existe = it && (it.t === "p" ? P[it.id] && P[it.id].estado !== "agotado" : it.t === "k" ? K[it.id] && !K[it.id].agotado : false);
         return existe && it.n > 0;
-      }).map(function (it) { return { t: it.t, id: it.id, n: Math.min(20, Math.floor(it.n)) }; });
+      }).map(function (it) {
+        var p = it.t === "p" ? P[it.id] : null;
+        var op = p && p.opciones.length ? (p.opciones.indexOf(it.op) > -1 ? it.op : p.opciones[0]) : undefined;
+        return { t: it.t, id: it.id, op: op, n: Math.min(20, Math.floor(it.n)) };
+      });
     } catch (e) { items = []; }
   })();
 
   function cosa(it) { return it.t === "k" ? K[it.id] : P[it.id]; }
-  function unitario(it) { var c = cosa(it); return c ? c.precio : 0; }
+  function unitario(it) { var c = cosa(it); return tienePrecio(c) ? c.precio : 0; }
   function subtotal() { return items.reduce(function (s, it) { return s + unitario(it) * it.n; }, 0); }
+  function todosConPrecio() { return items.every(function (it) { return tienePrecio(cosa(it)); }); }
   function unidades() { return items.reduce(function (s, it) { return s + it.n; }, 0); }
 
-  function agregar(t, id, n) {
-    var it = items.filter(function (x) { return x.t === t && x.id === id; })[0];
+  function agregar(t, id, n, op) {
+    var p = t === "p" ? P[id] : null;
+    if (p && p.opciones.length && p.opciones.indexOf(op) < 0) op = p.opciones[0];
+    var it = items.filter(function (x) { return x.t === t && x.id === id && x.op === op; })[0];
     if (it) it.n = Math.min(20, it.n + n);
-    else items.push({ t: t, id: id, n: n });
+    else items.push({ t: t, id: id, op: op, n: n });
     persistir();
     pintarCarrito();
     btnCarrito.classList.remove("salta"); void btnCarrito.offsetWidth; btnCarrito.classList.add("salta");
@@ -777,7 +855,9 @@
     Object.keys(enCarrito).forEach(function (id) { P[id].necesidades.forEach(function (n) { necs[n] = (necs[n] || 0) + 1; }); });
     var pasos = {};
     Object.keys(enCarrito).forEach(function (id) { pasos[P[id].paso] = 1; });
-    var candidatos = PRODUCTOS.filter(function (p) { return !enCarrito[p.id] && p.estado !== "agotado"; });
+    /* Si en el carrito hay algo de cuidado, se sugiere cuidado (no un oxidante). */
+    var cuidado = Object.keys(enCarrito).some(function (id) { return P[id].paso; });
+    var candidatos = PRODUCTOS.filter(function (p) { return !enCarrito[p.id] && p.estado !== "agotado" && (!cuidado || p.paso); });
     candidatos.sort(function (a, b) {
       function puntos(p) {
         return p.necesidades.reduce(function (s, n) { return s + (necs[n] || 0); }, 0) * 2 +
@@ -791,15 +871,19 @@
   function textoPedido() {
     var lineas = items.map(function (it) {
       var c = cosa(it);
-      var det = it.t === "k" ? " (" + c.items.map(function (p) { return p.nombre; }).join(" + ") + ")" : (c.contenido ? " (" + c.contenido + ")" : "");
-      return "• " + it.n + " × " + c.nombre + det + " — " + precio(unitario(it) * it.n);
+      var d = it.t === "k" ? c.items.map(function (p) { return p.nombre; }).join(" + ") : detalle(c, it.op);
+      return "• " + it.n + " × " + c.nombre + (d ? " (" + d + ")" : "") + (tienePrecio(c) ? " — " + precio(unitario(it) * it.n) : "");
     });
-    var st = subtotal();
-    var t = "Hola " + MARCA + "! Quiero hacer este pedido:\n\n" + lineas.join("\n") + "\n\nSubtotal: " + precio(st);
-    if (DESC) t += "\nPagando por transferencia (" + DESC + "% off): " + precio(conTransferencia(st));
-    if (ENVIO_GRATIS && st >= ENVIO_GRATIS) t += "\nEnvío: gratis";
-    if (cp) t += "\nCódigo postal: " + cp;
-    t += "\n\n¿Me confirman stock" + (ENVIO_GRATIS && st >= ENVIO_GRATIS ? "" : " y costo de envío") + "?";
+    var st = subtotal(), conPrecio = todosConPrecio();
+    var gratis = conPrecio && ENVIO_GRATIS && st >= ENVIO_GRATIS;
+    var t = "Hola " + MARCA + "! Quiero hacer este pedido:\n\n" + lineas.join("\n");
+    if (conPrecio) {
+      t += "\n\nSubtotal: " + precio(st);
+      if (DESC) t += "\nPagando por transferencia (" + DESC + "% off): " + precio(conTransferencia(st));
+      if (gratis) t += "\nEnvío: gratis";
+    }
+    if (cp) t += "\n" + (conPrecio ? "" : "\n") + "Código postal: " + cp;
+    t += "\n\n¿Me " + (conPrecio ? "confirman stock" : "pasan precio, stock") + (gratis ? "" : " y costo de envío") + "?";
     return t;
   }
 
@@ -811,8 +895,8 @@
     $("#carritoEtiqueta").textContent = n ? "Carrito, " + n + (n === 1 ? " producto" : " productos") : "Carrito, vacío";
     $("#carritoTituloN").textContent = n ? "(" + n + ")" : "";
 
-    var envio = $("#envio");
-    if (ENVIO_GRATIS && n) {
+    var envio = $("#envio"), conPrecio = todosConPrecio();
+    if (ENVIO_GRATIS && n && conPrecio) {
       envio.hidden = false;
       var falta = ENVIO_GRATIS - st;
       $("#envioTexto").innerHTML = falta > 0
@@ -840,7 +924,7 @@
       var c = cosa(it);
       var foto = it.t === "k" ? c.imagen : c.imagenes[0];
       var link = it.t === "k" ? "#rutinas" : "#producto/" + c.id;
-      var meta = it.t === "k" ? "Rutina · " + c.items.length + " productos" + (c.ahorro > 0 ? " · ahorrás " + precio(c.ahorro * it.n) : "") : [c.tipo, c.contenido].filter(Boolean).join(" · ");
+      var meta = it.t === "k" ? "Rutina · " + c.items.length + " productos" + (c.ahorro > 0 ? " · ahorrás " + precio(c.ahorro * it.n) : "") : [c.marca, it.op || c.contenido].filter(Boolean).join(" · ");
       return '<li class="item">' +
         '<a class="item__foto" href="' + link + '" tabindex="-1" aria-hidden="true">' + (foto ? '<img src="' + esc(foto) + '" alt="" loading="lazy" width="900" height="1125">' : "") + "</a>" +
         "<div>" +
@@ -852,26 +936,33 @@
             '<button type="button" data-item="' + i + '" data-delta="1" aria-label="Uno más">' + icono("i-mas") + "</button>" +
           "</div>" +
         "</div>" +
-        '<div class="item__der"><span class="precio">' + precio(unitario(it) * it.n) + "</span>" +
+        '<div class="item__der">' + (tienePrecio(c) ? '<span class="precio">' + precio(unitario(it) * it.n) + "</span>" : '<span class="item__consultar">A consultar</span>') +
           '<button class="item__quitar" type="button" data-quitar="' + i + '">Quitar</button></div>' +
         "</li>";
     }).join("") + "</ul>" +
     (sug ? '<div class="sumale"><p class="eyebrow">Completá tu rutina</p><div class="sumale__item">' +
       '<img src="' + esc(sug.imagenes[0] || "") + '" alt="" loading="lazy" width="900" height="1125">' +
-      '<div><a class="sumale__nombre" href="#producto/' + esc(sug.id) + '">' + esc(sug.nombre) + "</a><small>" + precio(sug.precio) + (sug.bajada ? " · " + esc(sug.bajada.split(".")[0]) : "") + "</small></div>" +
-      '<button class="sumale__btn" type="button" data-sumar="' + esc(sug.id) + '" aria-label="Agregar ' + esc(sug.nombre) + '">' + icono("i-mas") + "</button>" +
+      '<div><a class="sumale__nombre" href="#producto/' + esc(sug.id) + '">' + esc(sug.nombre) + "</a><small>" + [tienePrecio(sug) ? precio(sug.precio) : sug.marca, sug.bajada ? esc(sug.bajada.split(".")[0]) : ""].filter(Boolean).join(" · ") + "</small></div>" +
+      (sug.opciones.length
+        ? '<a class="sumale__btn" href="#producto/' + esc(sug.id) + '" aria-label="Ver ' + esc(sug.nombre) + '">' + icono("i-flecha") + "</a>"
+        : '<button class="sumale__btn" type="button" data-sumar="' + esc(sug.id) + '" aria-label="Agregar ' + esc(sug.nombre) + '">' + icono("i-mas") + "</button>") +
       "</div></div>" : "");
 
-    var filas = '<div><dt>Subtotal</dt><dd>' + precio(st) + "</dd></div>";
-    if (DESC) filas += '<div class="transf"><dt>Con transferencia (' + DESC + "% off)</dt><dd>" + precio(conTransferencia(st)) + "</dd></div>";
-    if (CUOTAS > 1) filas += "<div><dt>o " + CUOTAS + " cuotas sin interés de</dt><dd>" + precio(st / CUOTAS) + "</dd></div>";
-    filas += "<div><dt>Envío</dt><dd>" + (ENVIO_GRATIS && st >= ENVIO_GRATIS ? "Gratis" : "Lo calculamos con tu CP") + "</dd></div>";
+    var filas;
+    if (conPrecio) {
+      filas = '<div><dt>Subtotal</dt><dd>' + precio(st) + "</dd></div>";
+      if (DESC) filas += '<div class="transf"><dt>Con transferencia (' + DESC + "% off)</dt><dd>" + precio(conTransferencia(st)) + "</dd></div>";
+      if (CUOTAS > 1) filas += "<div><dt>o " + CUOTAS + " cuotas sin interés de</dt><dd>" + precio(st / CUOTAS) + "</dd></div>";
+    } else {
+      filas = '<div class="total"><dt>Total</dt><dd>Te lo pasamos por WhatsApp</dd></div>';
+    }
+    filas += "<div><dt>Envío</dt><dd>" + (conPrecio && ENVIO_GRATIS && st >= ENVIO_GRATIS ? "Gratis" : "Lo calculamos con tu CP") + "</dd></div>";
 
     pieCarrito.innerHTML =
       '<dl class="totales">' + filas + "</dl>" +
       '<div class="cp"><label for="cpInput">Tu código postal</label><input id="cpInput" inputmode="numeric" autocomplete="postal-code" maxlength="8" placeholder="Opcional" value="' + esc(cp) + '"></div>' +
       '<a class="btn btn--bloque" id="finalizar" href="#contacto">' + (hayWa ? icono("i-whatsapp") : "") + "<span>" + (hayWa ? "Finalizar por WhatsApp" : "Finalizar pedido") + "</span></a>" +
-      '<p class="carrito__nota">Te confirmamos stock y envío antes de pagar.</p>';
+      '<p class="carrito__nota">Te confirmamos ' + (conPrecio ? "stock" : "precio, stock") + " y envío antes de pagar.</p>";
 
     var fin = $("#finalizar");
     ponerWa(fin, textoPedido());
@@ -922,16 +1013,16 @@
     var preguntas = [
       { id: "tipo", q: "¿Cómo es tu pelo?", ops: [
         { t: "Lacio", s: "Cae recto, sin forma", tags: {} },
-        { t: "Ondulado", s: "Hace ondas suaves", tags: { rulos: 1, antifrizz: 1 } },
+        { t: "Ondulado", s: "Hace ondas suaves", tags: { rulos: 1, puntas: 1 } },
         { t: "Con rulos", s: "Rulos que se abren o se esponjan", tags: { rulos: 2 } },
         { t: "Muy rizado", s: "Rulos chicos y apretados", tags: { rulos: 2, hidratacion: 1 } }
       ] },
-      { id: "necesidad", q: "¿Qué es lo que más te molesta hoy?", ops: NEC_CON_PRODUCTOS.map(function (n) {
+      { id: "necesidad", q: "¿Qué es lo que más te molesta hoy?", ops: NEC_CON_PRODUCTOS.filter(function (n) { return n.diagnostico !== false; }).map(function (n) {
         var t = {}; t[n.id] = 3;
         return { t: n.nombre, s: n.bajada, tags: t, nec: n.id };
       }) },
       { id: "calor", q: "¿Usás plancha, buclera o secador?", ops: [
-        { t: "Casi todos los días", s: "Y se nota en las puntas", tags: { calor: 3, reparacion: 1 } },
+        { t: "Casi todos los días", s: "Y se nota en las puntas", tags: { calor: 3, reparacion: 1, puntas: 1 } },
         { t: "Algunas veces por semana", s: "Para ocasiones o el flequillo", tags: { calor: 2 } },
         { t: "Casi nunca", s: "Lo dejo secar al aire", tags: {} }
       ] }
@@ -985,7 +1076,8 @@
       var lista = recomendar();
       var nec = preguntas[1].ops[resp[1]];
       var kit = kitIgual(lista);
-      var suma = lista.reduce(function (s, p) { return s + p.precio; }, 0);
+      var suma = lista.reduce(function (s, p) { return s + (tienePrecio(p) ? p.precio : 0); }, 0);
+      var conPrecio = lista.every(tienePrecio);
       var texto = "Hola! Hice el diagnóstico (" + preguntas.map(function (pr, i) { return pr.ops[resp[i]].t.toLowerCase(); }).join(", ") +
         ") y me recomendó: " + lista.map(function (p) { return p.nombre; }).join(", ") + ". ¿Me ayudan?";
       cuerpoQ.innerHTML = '<div class="quiz__paso">' +
@@ -996,10 +1088,10 @@
           return '<li class="resultado__item">' +
             '<img src="' + esc(p.imagenes[0] || "") + '" alt="" loading="lazy" width="900" height="1125">' +
             '<div><span class="resultado__paso">' + (i + 1) + " · " + PASOS[p.paso] + '</span><a class="resultado__nombre" href="#producto/' + esc(p.id) + '">' + esc(p.nombre) + "</a></div>" +
-            '<span class="precio">' + precio(p.precio) + "</span></li>";
+            (tienePrecio(p) ? '<span class="precio">' + precio(p.precio) + "</span>" : '<span class="item__consultar">' + esc(p.marca || "") + "</span>") + "</li>";
         }).join("") + "</ol>" +
-        '<div class="resultado__total"><span>' + (kit ? "Es nuestra " + esc(kit.nombre) + ": ahorrás " + precio(kit.ahorro) : "Total de la rutina") + '</span><span><span class="precio">' + precio(kit ? kit.precio : suma) + "</span>" +
-          (kit && kit.ahorro > 0 ? ' <span class="precio-antes">' + precio(suma) + "</span>" : "") + "</span></div>" +
+        (conPrecio ? '<div class="resultado__total"><span>' + (kit ? "Es nuestra " + esc(kit.nombre) + ": ahorrás " + precio(kit.ahorro) : "Total de la rutina") + '</span><span><span class="precio">' + precio(kit ? kit.precio : suma) + "</span>" +
+          (kit && kit.ahorro > 0 ? ' <span class="precio-antes">' + precio(suma) + "</span>" : "") + "</span></div>" : "") +
         '<div class="resultado__acciones">' +
           '<button class="btn btn--bloque" type="button" data-llevar><span>Agregar la rutina al carrito</span>' + icono("i-mas") + "</button>" +
           (hayWa ? '<a class="btn btn--linea btn--bloque" id="quizWa" href="#">' + icono("i-whatsapp") + "<span>Consultar por WhatsApp</span></a>" : "") +
@@ -1053,12 +1145,13 @@
         "itemListElement": PRODUCTOS.map(function (p) {
           return {
             "@type": "Offer",
-            "price": p.precio,
-            "priceCurrency": cfg.moneda || "ARS",
+            "price": tienePrecio(p) ? p.precio : undefined,
+            "priceCurrency": tienePrecio(p) ? (cfg.moneda || "ARS") : undefined,
             "availability": "https://schema.org/" + (p.estado === "agotado" ? "OutOfStock" : "InStock"),
             "itemOffered": {
               "@type": "Product",
               "name": p.nombre,
+              "brand": p.marca ? { "@type": "Brand", "name": p.marca } : undefined,
               "description": p.bajada || p.descripcion || "",
               "image": p.imagenes[0] ? (base ? new URL(p.imagenes[0], location.href).href : p.imagenes[0]) : undefined,
               "url": base ? base + "#producto/" + p.id : undefined
@@ -1071,6 +1164,21 @@
     s.type = "application/ld+json";
     s.textContent = JSON.stringify(datos);
     document.head.appendChild(s);
+  })();
+
+  /* Una sección que quedó oculta (sin datos) se lleva sus links. */
+  (function linksDeSecciones() {
+    $$('a[href^="#"]').forEach(function (a) {
+      var id = a.getAttribute("href").slice(1);
+      var s = id && !/\//.test(id) ? document.getElementById(id) : null;
+      if (s && s.hidden) (a.closest("li") || a).hidden = true;
+    });
+    $$(".menu__links a:not([hidden]) span").forEach(function (s, i) { s.textContent = String(i + 1).padStart(2, "0"); });
+    /* Los números de las secciones (01, 02…) siguen el orden de las visibles. */
+    $$("main section").filter(function (s) { return !s.hidden; }).map(function (s) { return $(".eyebrow--num span", s); })
+      .filter(Boolean).forEach(function (s, i) { s.textContent = String(i + 1).padStart(2, "0"); });
+    var conf = $(".confianza");
+    if (conf && !$$("li", conf).some(function (li) { return !li.hidden; })) conf.hidden = true;
   })();
 
   /* Si se entró directo a un producto (link compartido), abrirlo. */

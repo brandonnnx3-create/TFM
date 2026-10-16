@@ -16,6 +16,12 @@
                           oculta la barra de progreso del carrito).
    descuentoTransferencia porcentaje. 0 = no se muestra.
    cuotasSinInteres       cantidad. 0 = no se muestra.
+
+   pagos    lista: ["Transferencia", "Mercado Pago", "Efectivo"].
+   envios   una frase: "Envíos a todo el país".
+   cambios  una frase: "Cambios dentro de los 30 días".
+   Quedan vacíos hasta que los confirmes: la página no promete nada
+   que no esté acá.
    ============================================================ */
 
 const CONFIG = {
@@ -26,11 +32,11 @@ const CONFIG = {
   "ciudad": "",
 
   "moneda": "ARS",
-  "envioGratisDesde": 60000,
-  "descuentoTransferencia": 10,
-  "cuotasSinInteres": 3,
+  "envioGratisDesde": 0,
+  "descuentoTransferencia": 0,
+  "cuotasSinInteres": 0,
 
-  "pagos": ["Transferencia", "Mercado Pago", "Tarjetas de débito y crédito"],
-  "envios": "Envíos a todo el país",
-  "cambios": "Cambios dentro de los 30 días, con el producto cerrado"
+  "pagos": [],
+  "envios": "",
+  "cambios": ""
 };

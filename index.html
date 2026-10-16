@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Time for me — Productos capilares</title>
 <meta name="description" content="Productos capilares para convertir el cuidado de tu pelo en tu momento del día. Elegí por lo que tu pelo necesita y armá tu rutina en minutos.">
-<!-- Mientras el catálogo sea de ejemplo, que Google no lo indexe.
-     Sacar esta línea cuando estén los productos reales. -->
+<!-- Mientras no se pueda comprar (falta WhatsApp y precios), que Google
+     no la indexe. Sacar esta línea cuando esté lista para vender. -->
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#FBF7F3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#240B13" media="(prefers-color-scheme: dark)">
@@ -33,7 +33,7 @@
 <link rel="preload" href="fonts/cormorant-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/cormorant-garamond-latin-500-italic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/jost-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" as="image" href="img/productos/hero-grupo.webp" type="image/webp">
+<link rel="preload" as="image" href="img/productos/fidelite-argan.jpg">
 <link rel="stylesheet" href="css/fuentes.css">
 <link rel="stylesheet" href="css/tienda.css">
 
@@ -171,8 +171,8 @@
           <span class="linea"><span>todos los días.</span></span>
         </h1>
         <p class="hero__bajada">
-          Shampoo, máscaras y tratamientos para que cuidar tu pelo sea tu momento del día.
-          Elegí por lo que tu pelo necesita y armá tu rutina en minutos.
+          Tratamientos, ampollas, máscaras y coloración de marcas profesionales, para que
+          cuidar tu pelo sea tu momento del día. Elegí por lo que tu pelo necesita y armá tu rutina.
         </p>
         <div class="hero__acciones">
           <a class="btn" href="#tienda"><span>Ver productos</span><svg class="i" aria-hidden="true"><use href="#i-flecha"/></svg></a>
@@ -189,15 +189,24 @@
         <div class="arco" aria-hidden="true">
           <svg class="arco__fig" id="heroFigura" viewBox="6 6 421 838" preserveAspectRatio="xMidYMid meet"><use href="#figura"/></svg>
         </div>
-        <img class="hero__productos" src="img/productos/hero-grupo.webp" width="1200" height="1060"
-             alt="Acondicionador, shampoo y máscara de la línea Time for me" fetchpriority="high">
-        <a class="hero__destacado" href="#producto/mascara-reparacion" data-destacado="mascara-reparacion">
-          <span class="eyebrow">Más vendido</span>
-          <span class="hero__destacado-nombre">Máscara Reparación Profunda</span>
-          <span class="hero__destacado-precio" data-precio-de="mascara-reparacion"></span>
+        <a class="hero__foto" href="#producto/fidelite-argan" tabindex="-1" aria-hidden="true">
+          <img src="img/productos/fidelite-argan.jpg" width="900" height="1125" alt="" fetchpriority="high">
+        </a>
+        <a class="hero__destacado" href="#producto/fidelite-argan" data-destacado="fidelite-argan">
+          <span class="eyebrow">Destacado</span>
+          <span class="hero__destacado-nombre">Tratamiento Restaurador Argán</span>
+          <span class="hero__destacado-precio"></span>
           <svg class="i" aria-hidden="true"><use href="#i-flecha"/></svg>
         </a>
       </div>
+    </div>
+  </section>
+
+  <!-- ============ MARCAS ============ -->
+  <section class="marcas" aria-labelledby="marcasTit">
+    <div class="wrap marcas__fila">
+      <p class="eyebrow" id="marcasTit">Marcas</p>
+      <ul class="marcas__lista" id="marcas"></ul>
     </div>
   </section>
 
@@ -232,6 +241,13 @@
         <div class="filtros__chips" id="filtros" role="group" aria-label="Filtrar por necesidad"></div>
         <div class="filtros__der">
           <p class="filtros__cuenta" id="cuenta" aria-live="polite"></p>
+          <label class="orden">
+            <span class="sr">Marca</span>
+            <select id="marca">
+              <option value="">Todas las marcas</option>
+            </select>
+            <svg class="i" aria-hidden="true"><use href="#i-chev"/></svg>
+          </label>
           <label class="orden">
             <span class="sr">Ordenar</span>
             <select id="orden">
@@ -341,11 +357,11 @@
           <summary>¿Cómo hago el pedido?<svg class="i" aria-hidden="true"><use href="#i-mas"/></svg></summary>
           <div class="faq__r"><p>Sumá los productos al carrito y tocá «Finalizar pedido». Te abre WhatsApp con el pedido ya armado: confirmamos stock y envío, y te pasamos los datos para pagar. No pagás nada hasta que esté todo confirmado.</p></div>
         </details>
-        <details>
+        <details data-si="envios">
           <summary>¿Hacen envíos?<svg class="i" aria-hidden="true"><use href="#i-mas"/></svg></summary>
           <div class="faq__r"><p><span data-dato="envios"></span>. El costo depende de tu código postal: te lo pasamos antes de que pagues.<span data-si="envioGratisDesde"> Desde <b data-dato="envioGratisDesde" data-formato="precio"></b> el envío es gratis.</span></p></div>
         </details>
-        <details>
+        <details data-si="pagos">
           <summary>¿Cómo puedo pagar?<svg class="i" aria-hidden="true"><use href="#i-mas"/></svg></summary>
           <div class="faq__r"><p><span data-dato="pagos"></span>.<span data-si="descuentoTransferencia"> Pagando por transferencia tenés <b data-dato="descuentoTransferencia"></b>% de descuento.</span><span data-si="cuotasSinInteres"> Con tarjeta de crédito, hasta <b data-dato="cuotasSinInteres"></b> cuotas sin interés.</span></p></div>
         </details>

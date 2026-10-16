@@ -240,6 +240,11 @@ em{font-style:italic}
 :root[data-theme="dark"] .i--luna{display:none}
 
 .precio{font-family:var(--f-texto);font-weight:500;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.precio--consultar{font-size:.95rem;letter-spacing:.02em}
+.card__precios .precio--consultar{font-size:.86rem;color:var(--ink-soft)}
+.ficha__precio .precio--consultar{font-size:1.25rem}
+.ficha__barra .precio--consultar{font-size:.95rem}
+.item__consultar{font-size:.8rem;color:var(--ink-soft);white-space:nowrap}
 .precio-antes{color:var(--ink-soft);text-decoration:line-through;font-weight:400;font-variant-numeric:tabular-nums}
 
 /* ---------- 4. Aviso y header ---------- */
@@ -385,12 +390,17 @@ em{font-style:italic}
   pointer-events:none;
 }
 .arco__fig{width:60%;height:72%;fill:currentColor;margin-top:16%}
-.hero__productos{
-  position:relative;z-index:1;
-  width:min(112%, 680px);max-width:none;
-  margin-right:-6%;margin-bottom:-2%;
-  filter:var(--img-filtro);
+/* Foto de producto "apoyada" sobre el arco, como una copia impresa. */
+.hero__foto{
+  position:absolute;z-index:1;left:4%;bottom:0;
+  width:min(46%, 300px);
+  padding:10px;background:var(--surface);
+  border-radius:3px;box-shadow:var(--sombra);
+  transform:rotate(-2deg);
+  transition:transform .8s var(--ease);
 }
+.hero__foto img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:2px;filter:var(--img-filtro)}
+.hero__foto:hover{transform:rotate(0deg) translateY(-4px)}
 .hero__destacado{
   position:absolute;z-index:2;left:0;top:14%;
   display:grid;grid-template-columns:1fr auto;column-gap:18px;align-items:end;
@@ -427,10 +437,29 @@ html.animar .arco__fig .trazo{
   .hero__acciones .btn{width:100%}
   .hero__visual{aspect-ratio:1/1.1}
   .arco{right:6%;width:74%;bottom:12%}
-  .hero__productos{width:118%;margin-right:-12%}
+  .hero__foto{width:50%;left:0;padding:7px}
+  /* En celular la foto ya lleva al producto: la tarjeta taparía el arco. */
+  .hero__destacado{display:none}
   .hero__destacado{top:6%;max-width:190px;padding:12px 14px}
   .hero__destacado-nombre{font-size:1.08rem}
   .confianza{gap:10px 20px;font-size:.8rem}
+}
+
+/* ---------- Marcas ---------- */
+.marcas{border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.marcas__fila{display:flex;align-items:center;gap:16px 48px;padding-top:26px;padding-bottom:26px;flex-wrap:wrap}
+.marcas .eyebrow{margin:0}
+.marcas__lista{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 0;flex:1;justify-content:space-between}
+.marcas__lista li{display:flex;align-items:baseline}
+.marcas__lista a{
+  font-family:var(--f-titulo);font-size:clamp(1.35rem, 1rem + 1.2vw, 2.1rem);line-height:1.2;
+  color:var(--ink);padding:4px 0;
+  transition:color .4s var(--ease);
+}
+.marcas__lista a:hover,.marcas__lista a:focus-visible{color:var(--accent);font-style:italic}
+@media (max-width:760px){
+  .marcas__fila{flex-direction:column;align-items:flex-start;gap:8px}
+  .marcas__lista{justify-content:flex-start;gap:2px 22px}
 }
 
 /* ---------- 7. Por necesidad ---------- */
@@ -494,7 +523,7 @@ html.animar .arco__fig .trazo{
   white-space:nowrap;
 }
 @media (hover:hover){.chip:hover{border-color:var(--ink)}}
-.chip[aria-pressed="true"]{background:var(--chip-bg);color:var(--chip-ink);border-color:var(--chip-bg)}
+.chip[aria-pressed="true"],.chip[aria-checked="true"]{background:var(--chip-bg);color:var(--chip-ink);border-color:var(--chip-bg)}
 .filtros__der{display:flex;align-items:center;gap:20px}
 .filtros__cuenta{margin:0;font-size:.85rem;color:var(--ink-soft);white-space:nowrap}
 .orden{position:relative;display:inline-flex;align-items:center}
@@ -799,7 +828,10 @@ html.animar .ritual.is-visible .ritual__hebra path{stroke-dashoffset:0}
 .ficha__contenido-pill{display:inline-block;padding:4px 12px;border:1px solid var(--line-strong);border-radius:999px;font-size:.78rem;color:var(--ink-soft)}
 .ficha__formas{margin:8px 0 0;font-size:.88rem;color:var(--ink-soft)}
 .ficha__formas b{color:var(--ink);font-weight:500}
+.opciones{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:22px}
+.opciones .eyebrow{width:100%;margin:0 0 4px}
 .ficha__comprar{display:flex;gap:10px;margin-bottom:12px}
+@media (max-width:420px){.ficha__comprar .btn{padding:0 16px;letter-spacing:.12em}}
 .ficha__comprar .btn{flex:1}
 .cantidad{display:inline-flex;align-items:center;border:1px solid var(--line-strong);border-radius:999px;height:54px;flex:none}
 .cantidad button{width:44px;height:100%;display:grid;place-items:center;border-radius:999px}
@@ -966,16 +998,17 @@ html.animar .hero__bajada{transition-delay:.35s}
 html.animar .hero__acciones{transition-delay:.45s}
 html.animar .confianza{transition-delay:.55s}
 html.animar .arco{clip-path:inset(100% 0 0 0 round 999px 999px 0 0);transition:clip-path 1.6s var(--ease-io) .1s}
-html.animar .hero__productos{opacity:0;transform:translateY(40px);transition:opacity 1.2s var(--ease) .7s, transform 1.6s var(--ease) .7s}
+html.animar .hero__foto{opacity:0;transform:translateY(40px) rotate(-2deg);transition:opacity 1.2s var(--ease) .7s, transform 1.6s var(--ease) .7s}
 html.animar .hero__destacado{opacity:0;transform:translateY(16px);transition:opacity 1s var(--ease) 1.4s, transform 1.2s var(--ease) 1.4s}
 html.animar .hero.is-in .hero__titulo .linea > span,
 html.animar .hero.is-in .hero__eyebrow,
 html.animar .hero.is-in .hero__bajada,
 html.animar .hero.is-in .hero__acciones,
 html.animar .hero.is-in .confianza,
-html.animar .hero.is-in .hero__productos,
 html.animar .hero.is-in .hero__destacado{opacity:1;transform:none}
 html.animar .hero.is-in .arco{clip-path:inset(0 0 0 0 round 999px 999px 0 0)}
+html.animar .hero.is-in .hero__foto{opacity:1;transform:rotate(-2deg)}
+html.animar .hero.is-in .hero__foto:hover{transform:rotate(0deg) translateY(-4px);transition-delay:0s}
 html.animar .hero.is-in .hero__destacado:hover{transform:translateY(-3px);transition-delay:0s}
 
 @media (prefers-reduced-motion:reduce){

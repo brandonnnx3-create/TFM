@@ -5,36 +5,38 @@ compilar nada): se puede publicar tal cual en GitHub Pages, Cloudflare Pages o
 cualquier hosting.
 
 Tiene versión clara y oscura (sigue la del teléfono o compu, y se puede cambiar
-con el botón de la luna/sol), catálogo con filtros por necesidad, ficha de cada
-producto, rutinas (kits) con descuento, un diagnóstico de tres preguntas que
-recomienda una rutina, y un carrito que manda el pedido armado por WhatsApp.
+con el botón de la luna/sol), catálogo con filtros por necesidad y por marca,
+ficha de cada producto con tamaños o volúmenes para elegir, un diagnóstico de
+tres preguntas que recomienda una rutina, y un carrito que manda el pedido
+armado por WhatsApp. Si se cargan rutinas (kits) con precio en
+`js/productos.js`, aparece también esa sección.
 
-## ⚠ Antes de publicar
+## Lo que falta para vender
 
-El catálogo que trae es **de ejemplo**: nombres, precios, textos y fotos son de
-muestra para armar el diseño. Las fotos son renders, no fotos de productos
-reales. Antes de vender hay que cargar lo real:
+El catálogo ya tiene los productos reales (Fidelité, Frilayp, Mary Bosques y
+Karseell), pero faltan datos que no estaban en las fotos:
 
-1. **`js/config.js`** — WhatsApp, Instagram, email, monto de envío gratis,
-   descuento por transferencia, cuotas, medios de pago y política de cambios.
-   Todo lo que la página promete sale de ahí: si algo no es cierto para tu
-   negocio, cambialo o dejalo vacío y desaparece de la página.
-2. **`js/productos.js`** — tus productos, precios y rutinas. Arriba de todo
-   está explicado cada campo.
-3. **`img/productos/`** — tus fotos (ver abajo).
-
-Sin WhatsApp cargado, los botones de compra llevan a la sección de contacto.
+1. **Precios** — en `js/productos.js`, `"precio": null` muestra "Consultar
+   precio". Se puede comprar igual: el pedido llega por WhatsApp y ahí se pasa
+   el total. Con un número (`"precio": 18900`) aparece el precio, el total del
+   carrito y el orden por precio.
+2. **WhatsApp** — en `js/config.js`. Sin número, "Finalizar pedido" lleva a la
+   sección de contacto y no se puede comprar.
+3. **Envíos, pagos, cuotas, descuentos y cambios** — en `js/config.js`. Están
+   vacíos a propósito: la página no promete nada que no esté cargado ahí.
+4. **Tamaños que no se ven en las fotos**: Tratamiento pH Ácido (Frilayp),
+   Crema Oxidante Hierbas 30 vol, Crema Oxidante 20 vol en envase chico,
+   Maca Power Collagen en sachets, y si el Polvo Decolorante se vende por caja
+   o por sobre.
 
 ## Fotos
 
-- Verticales **4:5**, por ejemplo 900 × 1125 px. JPG o WebP de menos de
-  200 KB cada una.
-- Fondo liso y claro, el producto centrado y entero, misma luz en todas: así la
-  grilla se ve pareja.
-- La primera foto de cada producto es la de la grilla; la segunda aparece al
-  pasar el mouse y en la ficha (puede ser el producto en uso, la textura, o
-  en otro ángulo).
-- Para las rutinas, una foto con los productos juntos.
+- Están en `img/productos/`, verticales **4:5** (900 × 1125 px). Salieron de
+  las imágenes de los proveedores, recortadas y con el fondo emparejado.
+- Para cambiar una: guardá la nueva con el mismo nombre, o cargá el nombre
+  nuevo en `imagenes` del producto.
+- La primera foto es la de la grilla; si hay una segunda, aparece al pasar el
+  mouse y en la ficha.
 
 ## Cómo está armado
 
@@ -70,9 +72,9 @@ a esa rama se publica solo (se ve en la pestaña **Actions** como "pages build
 and deployment"). No hay paso de compilación (por eso está el archivo
 `.nojekyll`).
 
-Mientras el catálogo sea de ejemplo, la página le pide a Google que no la
-indexe (`<meta name="robots" content="noindex">` en `index.html`). Sacá esa
-línea cuando cargues los productos reales.
+Mientras no se pueda comprar (sin WhatsApp ni precios), la página le pide a
+Google que no la indexe (`<meta name="robots" content="noindex">` en
+`index.html`). Sacá esa línea cuando esté lista para vender.
 
 Alternativa: **Cloudflare Pages** → Workers & Pages → Create → Pages →
 Connect to Git → elegir TFM, sin comando de build y con `/` como carpeta de

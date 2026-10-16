@@ -1,223 +1,498 @@
 /* ============================================================
    TIME FOR ME — CATÁLOGO
    ------------------------------------------------------------
-   ⚠ CATÁLOGO DE EJEMPLO. Los nombres, precios, textos y fotos
-   de abajo son de muestra para armar el diseño: reemplazalos por
-   tus productos reales antes de publicar la página.
-
    Lo que está entre llaves es JSON: comillas dobles y sin coma
    después del último elemento de cada lista.
 
-   NECESIDADES  (lo que el pelo necesita; arman los filtros, la
-                sección "¿Qué necesita tu pelo hoy?" y el diagnóstico)
-     id        palabra corta sin espacios ni tildes ("hidratacion").
-     nombre    como se muestra.
-     bajada    una línea de descripción.
-     imagen    foto que aparece al pasar el mouse en esa necesidad.
+   NECESIDADES  (arman los filtros, "¿Qué necesita tu pelo hoy?" y
+                el diagnóstico)
+     id            palabra corta sin espacios ni tildes.
+     nombre        como se muestra.
+     bajada        una línea de descripción.
+     imagen        foto que aparece al pasar el mouse.
+     diagnostico   false = no aparece como respuesta del diagnóstico
+                   (por ejemplo "Coloración", que no es una rutina).
 
    PRODUCTOS
      id         único, sin espacios ni tildes. Link directo:
-                tusitio/#producto/shampoo-hidratacion
+                tusitio/#producto/fidelite-argan
      nombre     como se muestra.
-     tipo       "Shampoo", "Máscara", "Sérum"...
-     paso       "limpieza", "tratamiento" o "finalizacion". Ordena la
-                rutina que recomienda el diagnóstico (1, 2, 3).
-     contenido  "300 ml", "250 g".
-     precio     número sin puntos (18900).
-     estado     "" , "nuevo", "mas-vendido" o "agotado".
+     marca      "Fidelité", "Frilayp"...
+     tipo       "Ampollas", "Máscara", "Shampoo"...
+     paso       "limpieza", "tratamiento" o "finalizacion": ordena la
+                rutina que recomienda el diagnóstico. "" = no entra en
+                el diagnóstico (coloración, oxidantes).
+     contenido  "30 ml", "12 ampollas de 15 ml". "" = no se muestra.
+     opciones   opcional: tamaños, volúmenes o tonos para elegir
+                (["270 g", "1000 g"]). opcionesTitulo: "Tamaño".
+                Con opciones, el botón de la grilla lleva a la ficha
+                para elegir.
+     precio     número sin puntos (18900), o null para "Consultar
+                precio": se arma el pedido igual y el total se pasa
+                por WhatsApp.
+     estado     "", "nuevo", "mas-vendido" o "agotado".
      necesidades  ids de la lista de arriba. Además existe "calor"
                 (para quien usa plancha o secador seguido).
-     bajada     una línea corta que vende: qué hace, para quién.
-     descripcion  párrafo de la ficha del producto.
-     beneficios lista corta (3 a 4 puntos).
-     uso        cómo se usa.
-     activos    opcional: ingredientes destacados. Vacío = no se muestra.
-     imagenes   1 o más fotos, verticales 4:5 (ej. 900 × 1125).
-                La primera es la de la grilla; la segunda aparece al
-                pasar el mouse.
+     bajada     una línea corta: qué hace, para quién.
+     descripcion, beneficios, uso, activos: textos de la ficha. Lo
+                vacío no se muestra.
+     imagenes   1 o más fotos verticales 4:5 (900 × 1125).
      alt        qué se ve en la foto, para quien no la ve.
 
-   RUTINAS  (kits: varios productos juntos con descuento)
-     productos  ids de los productos que incluye.
-     descuento  porcentaje sobre la suma de los precios.
+   RUTINAS  (kits con descuento sobre la suma de los precios)
+     Vacío = la sección no aparece. Necesita productos con precio.
    ============================================================ */
 
 const CATALOGO = {
   "necesidades": [
-    { "id": "hidratacion", "nombre": "Hidratación",   "bajada": "Seco, opaco o áspero al tacto",            "imagen": "img/productos/acondicionador-hidratacion-2.webp" },
-    { "id": "reparacion",  "nombre": "Reparación",    "bajada": "Castigado por decoloración, plancha o sol", "imagen": "img/productos/mascara-reparacion-2.webp" },
-    { "id": "rulos",       "nombre": "Rulos y ondas", "bajada": "Definición sin frizz ni efecto duro",       "imagen": "img/productos/crema-rulos-2.webp" },
-    { "id": "antifrizz",   "nombre": "Frizz y brillo","bajada": "Control en días húmedos, brillo sin peso",  "imagen": "img/productos/serum-puntas-2.webp" },
-    { "id": "rubios",      "nombre": "Rubios y canas","bajada": "Chau tonos amarillos",                      "imagen": "img/productos/shampoo-matizador-2.webp" },
-    { "id": "fuerza",      "nombre": "Fuerza",        "bajada": "Fino, sin volumen o que se quiebra",        "imagen": "img/productos/tonico-fortalecedor-2.webp" }
+    { "id": "hidratacion", "nombre": "Hidratación",        "bajada": "Seco, opaco o áspero al tacto",              "imagen": "img/productos/fidelite-mascara-almendras.jpg" },
+    { "id": "reparacion",  "nombre": "Reparación",         "bajada": "Dañado, quebradizo o castigado",             "imagen": "img/productos/karseell-collagen.jpg" },
+    { "id": "color",       "nombre": "Teñido o decolorado","bajada": "Cuidar el color y cerrar la cutícula",       "imagen": "img/productos/frilayp-combo-acido.jpg" },
+    { "id": "puntas",      "nombre": "Frizz y puntas",     "bajada": "Puntas abiertas, frizz y calor",             "imagen": "img/productos/fidelite-reparador-girasol.jpg" },
+    { "id": "rulos",       "nombre": "Rulos",              "bajada": "Hidratación y elasticidad",                  "imagen": "img/productos/frilayp-rulos.jpg" },
+    { "id": "coloracion",  "nombre": "Coloración",         "bajada": "Tinturas, oxidantes y decolorante",          "imagen": "img/productos/fidelite-colormaster.jpg", "diagnostico": false }
   ],
 
   "productos": [
     {
-      "id": "shampoo-hidratacion",
-      "nombre": "Shampoo Hidratación",
-      "tipo": "Shampoo",
-      "paso": "limpieza",
-      "contenido": "300 ml",
-      "precio": 18900,
-      "estado": "mas-vendido",
-      "necesidades": ["hidratacion", "rulos", "reparacion"],
-      "bajada": "Limpia sin resecar. Para lavar seguido sin perder suavidad.",
-      "descripcion": "Una fórmula suave que limpia el cuero cabelludo y deja el largo suave y fácil de desenredar. Pensado para pelo seco u opaco, y para quien necesita lavarse seguido sin que el pelo quede áspero.",
-      "beneficios": ["Limpieza suave, apta para uso diario", "Deja el pelo suave y fácil de desenredar", "La base de cualquier rutina"],
-      "uso": "Aplicá sobre el pelo mojado y masajeá el cuero cabelludo con las yemas, sin frotar el largo. Enjuagá bien. Si usás mucho producto de peinado, repetí.",
-      "activos": "",
-      "imagenes": ["img/productos/shampoo-hidratacion.webp", "img/productos/shampoo-hidratacion-2.webp"],
-      "alt": "Botella blanca de Shampoo Hidratación con tapa bordó"
-    },
-    {
-      "id": "acondicionador-hidratacion",
-      "nombre": "Acondicionador Hidratación",
-      "tipo": "Acondicionador",
+      "id": "fidelite-argan",
+      "nombre": "Tratamiento Restaurador Argán",
+      "marca": "Fidelité",
+      "tipo": "Ampollas",
       "paso": "tratamiento",
-      "contenido": "300 ml",
-      "precio": 19900,
+      "contenido": "12 ampollas de 15 ml",
+      "precio": null,
       "estado": "",
-      "necesidades": ["hidratacion", "rulos", "antifrizz"],
-      "bajada": "Desenreda y sella. El pelo queda suelto, suave y con movimiento.",
-      "descripcion": "El paso que no se saltea. Desenreda al instante, suaviza la fibra y ayuda a controlar el frizz sin dejar el pelo pesado ni graso.",
-      "beneficios": ["Desenreda sin tirones", "Suavidad y brillo desde el primer uso", "No apelmaza"],
-      "uso": "Después del shampoo, escurrí el exceso de agua y aplicá de medios a puntas. Peiná con los dedos, dejá actuar 2 o 3 minutos y enjuagá.",
-      "activos": "",
-      "imagenes": ["img/productos/acondicionador-hidratacion.webp", "img/productos/acondicionador-hidratacion-2.webp"],
-      "alt": "Botella rosa de Acondicionador Hidratación con tapa bordó"
+      "necesidades": ["hidratacion", "reparacion"],
+      "bajada": "Hidrata y nutre intensamente.",
+      "descripcion": "Ampollas de tratamiento concentrado a base de aceite de argán, de la línea Mythical Hair Complex de Fidelité. Para el pelo seco o castigado que necesita hidratación y nutrición intensas.",
+      "beneficios": ["Hidrata y nutre intensamente", "A base de aceite de argán", "Caja de 12 ampollas de 15 ml"],
+      "uso": "",
+      "activos": "Aceite de argán.",
+      "imagenes": ["img/productos/fidelite-argan.jpg"],
+      "alt": "Caja negra y dorada de ampollas Argán de Fidelité, con una ampolla al costado"
     },
     {
-      "id": "mascara-reparacion",
-      "nombre": "Máscara Reparación Profunda",
+      "id": "fidelite-caviar",
+      "nombre": "Complejo Caviar Hidro-Nutritivo",
+      "marca": "Fidelité",
+      "tipo": "Ampollas",
+      "paso": "finalizacion",
+      "contenido": "12 ampollas de 15 ml",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["hidratacion", "reparacion"],
+      "bajada": "Reestructura el cabello al instante. Sin enjuague.",
+      "descripcion": "Complejo hidro-nutritivo de la línea Caviar de Fidelité, de uso sin enjuague (leave on). Reestructura el cabello al instante.",
+      "beneficios": ["Reestructura el cabello al instante", "Sin enjuague", "Caja de 12 ampollas de 15 ml"],
+      "uso": "",
+      "activos": "",
+      "imagenes": ["img/productos/fidelite-caviar.jpg"],
+      "alt": "Caja violeta de ampollas Caviar de Fidelité, con una ampolla al costado"
+    },
+    {
+      "id": "fidelite-keratina-ampollas",
+      "nombre": "Complejo Keratínico Reestructurante",
+      "marca": "Fidelité",
+      "tipo": "Ampollas",
+      "paso": "tratamiento",
+      "contenido": "12 ampollas de 15 ml",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["reparacion", "color"],
+      "bajada": "Recupera la keratina natural.",
+      "descripcion": "Ampollas Keratin Complex de Fidelité: un tratamiento reestructurante intensivo a base de keratina.",
+      "beneficios": ["Recupera la keratina natural", "Tratamiento reestructurante intensivo", "Caja de 12 ampollas de 15 ml"],
+      "uso": "",
+      "activos": "Keratina.",
+      "imagenes": ["img/productos/fidelite-keratina-ampollas.jpg"],
+      "alt": "Caja naranja de ampollas Keratin Complex de Fidelité"
+    },
+    {
+      "id": "fidelite-lino-ampollas",
+      "nombre": "Tratamiento Reestructurante de Semillas de Lino",
+      "marca": "Fidelité",
+      "tipo": "Ampollas",
+      "paso": "tratamiento",
+      "contenido": "12 ampollas de 15 ml",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["reparacion", "puntas"],
+      "bajada": "Reestructura y cierra las cutículas.",
+      "descripcion": "Ampollas Linen Seeds de Fidelité, a base de extracto de semillas de lino. Reestructuran el cabello y cierran las cutículas.",
+      "beneficios": ["Reestructura el cabello", "Cierra las cutículas", "Caja de 12 ampollas de 15 ml"],
+      "uso": "",
+      "activos": "Extracto de semillas de lino.",
+      "imagenes": ["img/productos/fidelite-lino-ampollas.jpg"],
+      "alt": "Caja turquesa de ampollas Linen Seeds de Fidelité"
+    },
+    {
+      "id": "fidelite-mascara-keratina",
+      "nombre": "Máscara Keratina Reparadora",
+      "marca": "Fidelité",
       "tipo": "Máscara",
       "paso": "tratamiento",
-      "contenido": "250 g",
-      "precio": 24900,
-      "estado": "mas-vendido",
-      "necesidades": ["reparacion", "hidratacion", "rubios"],
-      "bajada": "Para pelo castigado por decoloración, plancha o sol. Una vez por semana.",
-      "descripcion": "Un tratamiento intensivo para el pelo que pide ayuda: decolorado, con muchas planchitas encima o reseco después del verano. Lo deja más suave, flexible y con menos quiebre al peinar.",
-      "beneficios": ["Nutrición intensiva en un solo uso", "Menos quiebre al peinar", "Ideal para rubios y decolorados"],
-      "uso": "Una o dos veces por semana, en lugar del acondicionador. Aplicá sobre el pelo limpio y escurrido, de medios a puntas, y dejá actuar entre 5 y 10 minutos. Ese es tu rato. Enjuagá con agua tibia.",
-      "activos": "",
-      "imagenes": ["img/productos/mascara-reparacion.webp", "img/productos/mascara-reparacion-2.webp"],
-      "alt": "Pote de Máscara Reparación Profunda con tapa bordó"
+      "contenido": "",
+      "opciones": ["270 g", "1000 g"],
+      "opcionesTitulo": "Tamaño",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["reparacion", "color"],
+      "bajada": "Repara y devuelve la keratina al cabello.",
+      "descripcion": "Máscara capilar de keratina de la línea Reparación de Fidelité. Repara el pelo dañado y le devuelve la keratina. En pote de 270 g o de 1 kg.",
+      "beneficios": ["Repara y devuelve la keratina al cabello", "Línea Reparación", "En 270 g o 1000 g"],
+      "uso": "",
+      "activos": "Keratina.",
+      "imagenes": ["img/productos/fidelite-mascara-keratina.jpg"],
+      "alt": "Dos potes naranjas de máscara Keratina de Fidelité, de 270 g y de 1000 g"
     },
     {
-      "id": "serum-puntas",
-      "nombre": "Sérum de Puntas",
-      "tipo": "Sérum",
+      "id": "fidelite-mascara-almendras",
+      "nombre": "Máscara Almendras Hidratante",
+      "marca": "Fidelité",
+      "tipo": "Máscara",
+      "paso": "tratamiento",
+      "contenido": "",
+      "opciones": ["270 g", "1000 g"],
+      "opcionesTitulo": "Tamaño",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["hidratacion", "rulos"],
+      "bajada": "Aporta vitaminas e hidratación profunda.",
+      "descripcion": "Máscara capilar de almendras de la línea Hidratación de Fidelité. Aporta vitaminas e hidratación profunda al pelo seco u opaco. En pote de 270 g o de 1 kg.",
+      "beneficios": ["Hidratación profunda", "Aporta vitaminas", "En 270 g o 1000 g"],
+      "uso": "",
+      "activos": "Almendras.",
+      "imagenes": ["img/productos/fidelite-mascara-almendras.jpg"],
+      "alt": "Dos potes cobrizos de máscara Almendras de Fidelité, de 270 g y de 1000 g"
+    },
+    {
+      "id": "fidelite-reparador-lino",
+      "nombre": "Reparador de Puntas de Lino",
+      "marca": "Fidelité",
+      "tipo": "Reparador de puntas",
       "paso": "finalizacion",
       "contenido": "30 ml",
-      "precio": 16900,
+      "precio": null,
       "estado": "",
-      "necesidades": ["antifrizz", "reparacion", "hidratacion"],
-      "bajada": "Dos gotas en las puntas: brillo y control del frizz.",
-      "descripcion": "El toque final. Sella las puntas, controla el frizz y suma brillo sin dejar el pelo graso. Un frasco chico que rinde mucho: con dos o tres gotas alcanza.",
-      "beneficios": ["Brillo inmediato", "Controla el frizz y el volumen", "Rinde meses"],
-      "uso": "Frotá 2 o 3 gotas entre las palmas y aplicá sólo en las puntas, con el pelo húmedo o seco. Menos es más.",
-      "activos": "",
-      "imagenes": ["img/productos/serum-puntas.webp", "img/productos/serum-puntas-2.webp"],
-      "alt": "Frasco gotero de vidrio bordó de Sérum de Puntas"
+      "necesidades": ["puntas"],
+      "bajada": "Densidad media. Ideal para cabellos finos.",
+      "descripcion": "Sérum reparador de puntas de lino, de densidad media. Repara las puntas dañadas; ideal para el pelo fino.",
+      "beneficios": ["Repara las puntas dañadas", "Densidad media", "Ideal para cabellos finos"],
+      "uso": "",
+      "activos": "Lino.",
+      "imagenes": ["img/productos/fidelite-reparador-lino.jpg"],
+      "alt": "Frasco violeta con dosificador del Reparador de Puntas de Lino de Fidelité, junto a su caja"
     },
     {
-      "id": "crema-rulos",
-      "nombre": "Crema de Peinar Rulos",
-      "tipo": "Crema de peinar",
+      "id": "fidelite-reparador-girasol",
+      "nombre": "Reparador de Puntas de Girasol",
+      "marca": "Fidelité",
+      "tipo": "Reparador de puntas",
       "paso": "finalizacion",
-      "contenido": "200 ml",
-      "precio": 17900,
-      "estado": "nuevo",
-      "necesidades": ["rulos", "antifrizz", "hidratacion"],
-      "bajada": "Define sin endurecer. Rulos marcados y suaves al tacto.",
-      "descripcion": "Para rulos y ondas que se abren o se esponjan. Define cada rulo, controla el frizz y los deja suaves y con movimiento, sin efecto duro ni acartonado.",
-      "beneficios": ["Definición que dura todo el día", "Sin efecto duro", "Controla el frizz"],
-      "uso": "Con el pelo bien mojado, aplicá por mechones de medios a puntas. Arrugá hacia arriba con las manos y dejá secar al aire o con difusor.",
-      "activos": "",
-      "imagenes": ["img/productos/crema-rulos.webp", "img/productos/crema-rulos-2.webp"],
-      "alt": "Pomo color arena de Crema de Peinar Rulos con tapa bordó"
-    },
-    {
-      "id": "termoprotector",
-      "nombre": "Spray Termoprotector",
-      "tipo": "Spray",
-      "paso": "finalizacion",
-      "contenido": "200 ml",
-      "precio": 18500,
+      "contenido": "30 ml",
+      "precio": null,
       "estado": "",
-      "necesidades": ["reparacion", "calor", "antifrizz"],
-      "bajada": "Antes de la plancha, la buclera o el secador. Siempre.",
-      "descripcion": "La capa que se pone entre tu pelo y el calor. Ayuda a cuidar la fibra de la plancha, la buclera y el secador, y deja el pelo suave y con brillo, sin peso.",
-      "beneficios": ["Cuida el pelo del calor", "Ayuda a que el peinado dure más", "Liviano, no engrasa"],
-      "uso": "Rociá a 20 cm sobre el pelo húmedo o seco, mechón por mechón, antes de usar calor. Peiná para distribuir.",
-      "activos": "",
-      "imagenes": ["img/productos/termoprotector.webp", "img/productos/termoprotector-2.webp"],
-      "alt": "Botella bordó de Spray Termoprotector con válvula clara"
+      "necesidades": ["puntas", "reparacion"],
+      "bajada": "Densidad alta. Ideal para cabellos castigados.",
+      "descripcion": "Sérum reparador de puntas de girasol, de densidad alta. Repara las puntas dañadas: ideal para el pelo castigado.",
+      "beneficios": ["Repara las puntas dañadas", "Densidad alta", "Ideal para cabellos castigados"],
+      "uso": "",
+      "activos": "Girasol.",
+      "imagenes": ["img/productos/fidelite-reparador-girasol.jpg"],
+      "alt": "Frasco rojo con dosificador del Reparador de Puntas de Girasol de Fidelité, junto a su caja dorada"
     },
     {
-      "id": "shampoo-matizador",
-      "nombre": "Shampoo Matizador",
+      "id": "fidelite-protector-termico",
+      "nombre": "Protector Térmico Caviar",
+      "marca": "Fidelité",
+      "tipo": "Protector térmico",
+      "paso": "finalizacion",
+      "contenido": "120 ml",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["puntas", "calor", "reparacion"],
+      "bajada": "Escudo protector contra el calor.",
+      "descripcion": "Protector térmico en spray de la línea Caviar de Fidelité. Un escudo para el pelo antes de usar plancha, buclera o secador.",
+      "beneficios": ["Escudo protector contra el calor", "En spray", "120 ml"],
+      "uso": "",
+      "activos": "",
+      "imagenes": ["img/productos/fidelite-protector-termico.jpg"],
+      "alt": "Spray violeta Protector Térmico Caviar de Fidelité"
+    },
+    {
+      "id": "frilayp-combo-acido",
+      "nombre": "Combo pH Ácido",
+      "marca": "Frilayp",
+      "tipo": "Shampoo + acondicionador",
+      "paso": "limpieza",
+      "contenido": "2 envases de 370 ml",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["color"],
+      "bajada": "Para teñidos y decolorados: fija el color y aporta brillo.",
+      "descripcion": "Shampoo y acondicionador de pH ácido. Tratan el pelo teñido o decolorado y el pelo procesado que quedó poroso. Ideales para el cierre técnico: fijan el color y aportan brillo y protección.",
+      "beneficios": ["Para pelo teñido, decolorado o procesado", "Ideal para el cierre técnico", "Fija el color y aporta brillo y protección"],
+      "uso": "",
+      "activos": "",
+      "imagenes": ["img/productos/frilayp-combo-acido.jpg"],
+      "alt": "Shampoo y acondicionador pH Ácido de Frilayp, rodeados de rodajas de limón y naranja"
+    },
+    {
+      "id": "frilayp-combo-keratina-argan",
+      "nombre": "Combo Keratina y Argán",
+      "marca": "Frilayp",
+      "tipo": "Shampoo + acondicionador",
+      "paso": "limpieza",
+      "contenido": "2 envases de 370 ml",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["reparacion", "puntas", "hidratacion"],
+      "bajada": "Repara, reduce el frizz y previene las puntas abiertas.",
+      "descripcion": "Shampoo y acondicionador de keratina y argán, para todo tipo de pelo. Penetran en la fibra capilar para reconstruir y fortalecer el pelo desde adentro, reducen el frizz y previenen las puntas abiertas.",
+      "beneficios": ["Para todo tipo de pelo", "Reconstruye y fortalece desde adentro", "Reduce el frizz y previene las puntas abiertas"],
+      "uso": "",
+      "activos": "Keratina y aceite de argán.",
+      "imagenes": ["img/productos/frilayp-combo-keratina-argan.jpg"],
+      "alt": "Shampoo y acondicionador Keratina y Argán de Frilayp, con semillas de argán"
+    },
+    {
+      "id": "frilayp-acido-hialuronico",
+      "nombre": "Tratamiento Ácido Hialurónico",
+      "marca": "Frilayp",
+      "tipo": "Tratamiento capilar",
+      "paso": "tratamiento",
+      "contenido": "240 g",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["hidratacion"],
+      "bajada": "Cabello fuerte y lleno de vida.",
+      "descripcion": "Tratamiento capilar de ácido hialurónico de Frilayp, para un pelo fuerte y lleno de vida.",
+      "beneficios": ["Cabello fuerte y lleno de vida", "Pote de 240 g"],
+      "uso": "",
+      "activos": "Ácido hialurónico.",
+      "imagenes": ["img/productos/frilayp-acido-hialuronico.jpg"],
+      "alt": "Pote blanco de Tratamiento Ácido Hialurónico de Frilayp"
+    },
+    {
+      "id": "frilayp-ph-acido",
+      "nombre": "Tratamiento pH Ácido",
+      "marca": "Frilayp",
+      "tipo": "Tratamiento capilar",
+      "paso": "tratamiento",
+      "contenido": "",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["color"],
+      "bajada": "Tratamiento capilar profesional de pH ácido.",
+      "descripcion": "Tratamiento capilar profesional de pH ácido de Frilayp.",
+      "beneficios": ["Tratamiento capilar profesional", "pH ácido"],
+      "uso": "",
+      "activos": "",
+      "imagenes": ["img/productos/frilayp-ph-acido.jpg"],
+      "alt": "Pote con etiqueta verde de Tratamiento pH Ácido de Frilayp"
+    },
+    {
+      "id": "frilayp-rulos",
+      "nombre": "Tratamiento Rulos",
+      "marca": "Frilayp",
+      "tipo": "Tratamiento capilar",
+      "paso": "tratamiento",
+      "contenido": "240 g",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["rulos", "hidratacion"],
+      "bajada": "Hidratación intensa y elasticidad.",
+      "descripcion": "Tratamiento capilar para rulos de Frilayp: hidratación intensa y elasticidad.",
+      "beneficios": ["Hidratación intensa", "Elasticidad", "Pote de 240 g"],
+      "uso": "",
+      "activos": "",
+      "imagenes": ["img/productos/frilayp-rulos.jpg"],
+      "alt": "Pote blanco de Tratamiento Rulos de Frilayp"
+    },
+    {
+      "id": "karseell-collagen",
+      "nombre": "Máscara Maca Power Collagen",
+      "marca": "Karseell",
+      "tipo": "Máscara",
+      "paso": "tratamiento",
+      "contenido": "500 ml",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["reparacion", "hidratacion", "puntas"],
+      "bajada": "Nutrición, reparación y brillo desde la primera aplicación.",
+      "descripcion": "La mascarilla Karseell Maca Power Collagen, con extracto de maca. Para todo tipo de pelo, especialmente dañado y seco.",
+      "beneficios": ["Repara el cabello dañado y previene el quiebre", "Hidratación y acondicionamiento profundos", "Controla el frizz y aporta brillo"],
+      "uso": "",
+      "activos": "Extracto de maca y colágeno.",
+      "imagenes": ["img/productos/karseell-collagen.jpg", "img/productos/karseell-collagen-sachets.jpg"],
+      "alt": "Pote de Mascarilla Karseell Maca Power Collagen de 500 ml"
+    },
+    {
+      "id": "karseell-collagen-sachets",
+      "nombre": "Maca Power Collagen en sachets",
+      "marca": "Karseell",
+      "tipo": "Máscara en sachet",
+      "paso": "tratamiento",
+      "contenido": "",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["reparacion", "hidratacion"],
+      "bajada": "La mascarilla Karseell en formato sachet.",
+      "descripcion": "La mascarilla Karseell Maca Power Collagen en sachets individuales.",
+      "beneficios": ["Formato individual", "Para pelo dañado y seco"],
+      "uso": "",
+      "activos": "Extracto de maca y colágeno.",
+      "imagenes": ["img/productos/karseell-collagen-sachets.jpg"],
+      "alt": "Caja y sachets de Karseell Maca Power Collagen"
+    },
+    {
+      "id": "mary-bosques-ph7",
+      "nombre": "Shampoo Neutro pH7 Pre Tratamiento",
+      "marca": "Mary Bosques",
       "tipo": "Shampoo",
       "paso": "limpieza",
-      "contenido": "300 ml",
-      "precio": 19900,
+      "contenido": "Caja de 36 sobres de 10 g",
+      "precio": null,
       "estado": "",
-      "necesidades": ["rubios"],
-      "bajada": "Neutraliza los tonos amarillos en rubios, mechas y canas.",
-      "descripcion": "Un shampoo violeta para mantener el rubio frío entre visitas a la peluquería. Neutraliza los reflejos amarillos o anaranjados en rubios, mechas, decolorados y canas.",
-      "beneficios": ["Rubio más frío y luminoso", "Para mechas, decolorados y canas", "Usalo 1 o 2 veces por semana"],
-      "uso": "Una o dos veces por semana, en lugar de tu shampoo habitual. Aplicá, masajeá y dejá actuar entre 1 y 3 minutos: cuanto más tiempo, más matiza. Enjuagá y seguí con acondicionador o máscara.",
+      "necesidades": ["reparacion", "color", "hidratacion"],
+      "bajada": "Prepara tu pelo para que el tratamiento rinda más.",
+      "descripcion": "Shampoo neutro de pH balanceado, el primer paso antes de cualquier tratamiento: limpia suave y profundamente, elimina residuos y abre la cutícula para que el tratamiento penetre mejor.",
+      "beneficios": ["Limpia suave y profundamente", "Elimina residuos y abre la cutícula", "pH balanceado"],
+      "uso": "Aplicá la cantidad necesaria sobre el pelo húmedo. Masajeá suavemente el cuero cabelludo y todo el largo, sin enredarlo. Enjuagá con abundante agua, secá con toalla y aplicá el tratamiento elegido.",
       "activos": "",
-      "imagenes": ["img/productos/shampoo-matizador.webp", "img/productos/shampoo-matizador-2.webp"],
-      "alt": "Botella lila de Shampoo Matizador con tapa ciruela"
+      "imagenes": ["img/productos/mary-bosques-ph7.jpg"],
+      "alt": "Caja y sobre de Shampoo Neutro pH7 Pre Tratamiento de Mary Bosques"
     },
     {
-      "id": "tonico-fortalecedor",
-      "nombre": "Tónico Fortalecedor",
-      "tipo": "Tónico",
+      "id": "mary-bosques-colageno",
+      "nombre": "Colágeno Capilar",
+      "marca": "Mary Bosques",
+      "tipo": "Tratamiento en sachet",
       "paso": "tratamiento",
-      "contenido": "100 ml",
-      "precio": 21900,
-      "estado": "nuevo",
-      "necesidades": ["fuerza"],
-      "bajada": "Para el cuero cabelludo. Pelo fino, sin volumen o que se quiebra.",
-      "descripcion": "Un tónico liviano para aplicar directo en el cuero cabelludo. Pensado para pelo fino o sin cuerpo: aporta sensación de volumen desde la raíz y deja el pelo más fuerte al tacto.",
-      "beneficios": ["Volumen desde la raíz", "Textura liviana, no engrasa", "Se aplica en un minuto"],
-      "uso": "Con el pelo limpio, húmedo o seco, aplicá 3 o 4 pulsos sobre el cuero cabelludo, separando por zonas. Masajeá con las yemas. No se enjuaga.",
+      "contenido": "Sobre de 20 g",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["reparacion"],
+      "bajada": "Elasticidad y fuerza para el pelo dañado.",
+      "descripcion": "Tratamiento capilar para la reconstrucción del pelo dañado. Mejora la elasticidad y la fuerza del cabello. En crema, en sachet, para una aplicación fácil.",
+      "beneficios": ["Reconstruye el pelo dañado", "Mejora la elasticidad y la fuerza", "Sachet de 20 g"],
+      "uso": "",
+      "activos": "Colágeno.",
+      "imagenes": ["img/productos/mary-bosques-colageno.jpg"],
+      "alt": "Caja y sobres de Colágeno Capilar de Mary Bosques"
+    },
+    {
+      "id": "mary-bosques-3-minutos",
+      "nombre": "Tratamiento Reparador Intensivo 3 Minutos",
+      "marca": "Mary Bosques",
+      "tipo": "Tratamiento en sachet",
+      "paso": "tratamiento",
+      "contenido": "Sobre de 20 g",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["reparacion", "color"],
+      "bajada": "Reconstruye y fortalece en 3 minutos.",
+      "descripcion": "Tratamiento reparador intensivo de acción rápida: reconstruye y fortalece el pelo y lo deja sin porosidad, en 3 minutos.",
+      "beneficios": ["Reconstruye y fortalece", "Cabello sin porosidad", "Actúa en 3 minutos"],
+      "uso": "",
       "activos": "",
-      "imagenes": ["img/productos/tonico-fortalecedor.webp", "img/productos/tonico-fortalecedor-2.webp"],
-      "alt": "Frasco verde salvia de Tónico Fortalecedor con válvula dosificadora bordó"
+      "imagenes": ["img/productos/mary-bosques-3-minutos.jpg"],
+      "alt": "Sobre de Tratamiento Reparador Intensivo 3 Minutos de Mary Bosques"
+    },
+    {
+      "id": "fidelite-colormaster",
+      "nombre": "Coloración Color Master",
+      "marca": "Fidelité",
+      "tipo": "Tintura",
+      "paso": "",
+      "contenido": "60 g",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["coloracion"],
+      "bajada": "Coloración premium en crema. Consultá los tonos.",
+      "descripcion": "Tintura en crema Color Master de Fidelité, coloración premium en pomo de 60 g. Escribinos para saber qué tonos hay disponibles.",
+      "beneficios": ["Coloración premium", "Pomo de 60 g"],
+      "uso": "",
+      "activos": "",
+      "imagenes": ["img/productos/fidelite-colormaster.jpg"],
+      "alt": "Pomo y caja roja de coloración Color Master de Fidelité"
+    },
+    {
+      "id": "frilayp-oxidante-hierbas",
+      "nombre": "Crema Oxidante Hierbas",
+      "marca": "Frilayp",
+      "tipo": "Oxidante",
+      "paso": "",
+      "contenido": "",
+      "opciones": ["20 vol", "30 vol"],
+      "opcionesTitulo": "Volumen",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["coloracion"],
+      "bajada": "Crema oxidante con hierbas, en 20 y 30 volúmenes.",
+      "descripcion": "Crema oxidante con hierbas de Frilayp, para usar con tinturas y decolorantes. En 20 o 30 volúmenes.",
+      "beneficios": ["Con hierbas", "En 20 o 30 volúmenes"],
+      "uso": "",
+      "activos": "",
+      "imagenes": ["img/productos/frilayp-oxidante-hierbas.jpg", "img/productos/frilayp-oxidante-hierbas-30.jpg"],
+      "alt": "Botella violeta de Crema Oxidante Hierbas de Frilayp"
+    },
+    {
+      "id": "frilayp-oxidante-chico",
+      "nombre": "Crema Oxidante 20 vol",
+      "marca": "Frilayp",
+      "tipo": "Oxidante",
+      "paso": "",
+      "contenido": "Envase chico",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["coloracion"],
+      "bajada": "Crema oxidante de 20 volúmenes en envase chico.",
+      "descripcion": "Crema oxidante de 20 volúmenes de Frilayp, en envase chico.",
+      "beneficios": ["20 volúmenes", "Envase chico"],
+      "uso": "",
+      "activos": "",
+      "imagenes": ["img/productos/frilayp-oxidante-chico.jpg"],
+      "alt": "Envases blancos chicos de Crema Oxidante 20 vol de Frilayp"
+    },
+    {
+      "id": "frilayp-revelador",
+      "nombre": "Revelador",
+      "marca": "Frilayp",
+      "tipo": "Revelador",
+      "paso": "",
+      "contenido": "920 cc",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["coloracion"],
+      "bajada": "Revelador para coloración, en envase de 920 cc.",
+      "descripcion": "Revelador de Frilayp para coloración, en envase de 920 cc.",
+      "beneficios": ["Envase de 920 cc"],
+      "uso": "",
+      "activos": "",
+      "imagenes": ["img/productos/frilayp-revelador.jpg"],
+      "alt": "Botellas violetas de Revelador de Frilayp"
+    },
+    {
+      "id": "mary-bosques-decolorante",
+      "nombre": "Polvo Decolorante",
+      "marca": "Mary Bosques",
+      "tipo": "Decolorante",
+      "paso": "",
+      "contenido": "Caja de 12 sobres de 70 g",
+      "precio": null,
+      "estado": "",
+      "necesidades": ["coloracion"],
+      "bajada": "Decolorante en polvo, en sobres de 70 g.",
+      "descripcion": "Polvo decolorante de Mary Bosques en sobres de 70 g. Se prepara con crema oxidante.",
+      "beneficios": ["Sobres de 70 g", "Caja de 12 sobres"],
+      "uso": "",
+      "activos": "",
+      "imagenes": ["img/productos/mary-bosques-decolorante.jpg"],
+      "alt": "Caja y sobre de Polvo Decolorante de Mary Bosques"
     }
   ],
 
-  "rutinas": [
-    {
-      "id": "rutina-hidratacion",
-      "nombre": "Rutina Hidratación",
-      "bajada": "Para pelo seco que pide suavidad y brillo.",
-      "productos": ["shampoo-hidratacion", "acondicionador-hidratacion", "serum-puntas"],
-      "descuento": 15,
-      "imagen": "img/productos/rutina-hidratacion.webp",
-      "alt": "Shampoo, acondicionador y sérum de la línea Hidratación"
-    },
-    {
-      "id": "rutina-reparacion",
-      "nombre": "Rutina Reparación",
-      "bajada": "Para pelo castigado por el calor o la decoloración.",
-      "productos": ["shampoo-hidratacion", "mascara-reparacion", "termoprotector"],
-      "descuento": 15,
-      "imagen": "img/productos/rutina-reparacion.webp",
-      "alt": "Shampoo, máscara de reparación y spray termoprotector"
-    },
-    {
-      "id": "rutina-rulos",
-      "nombre": "Rutina Rulos",
-      "bajada": "Definición que dura, sin frizz y sin efecto duro.",
-      "productos": ["shampoo-hidratacion", "acondicionador-hidratacion", "crema-rulos"],
-      "descuento": 15,
-      "imagen": "img/productos/rutina-rulos.webp",
-      "alt": "Shampoo, acondicionador y crema de peinar para rulos"
-    }
-  ]
+  "rutinas": []
 };
